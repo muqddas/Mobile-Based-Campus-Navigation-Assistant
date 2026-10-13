@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FastAPI Test Interface</title>
+</head>
+<body>
+  <h2>Upload Image to Test API</h2>
+
+  <input type="file" id="imageInput" accept="image/*"><br><br>
+
+  <button onclick="callApi('/detect')">Detect Objects</button>
+  <button onclick="callApi('/detect-with-image', true)">Detect with Image</button>
+  <button onclick="callApi('/detect-landmark-and-objects')">Detect Landmark + Objects</button>
+  <button onclick="callApi('/detect-landmark-and-objects-with-image', true)">Detect Landmark + Objects with Image</button>
+  <button onclick="getData('/object-dimensions')">Get Object Dimensions</button>
+  <button onclick="getData('/landmark-classes')">Get Landmark Classes</button>
+
+  <h3>Result:</h3>
+  <pre id="result"></pre>
+  <img id="resultImage" style="max-width: 500px; display: none;">
+
+  <script>
+    const BASE_URL = "http://localhost:8000";
+
+    async function callApi(endpoint, expectImage = false) {
+      const fileInput = document.getElementById("imageInput");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please upload an image.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(BASE_URL + endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      const resultBox = document.getElementById("result");
+      const resultImage = document.getElementById("resultImage");
+
+      if (expectImage) {
+        const blob = await response.blob();
+        resultImage.src = URL.createObjectURL(blob);
+        resultImage.style.display = "block";
+        resultBox.textContent = "";
+      } else {
+        const data = await response.json();
+        resultImage.style.display = "none";
+        resultBox.textContent = JSON.stringify(data, null, 2);
+      }
+    }
+
+    async function getData(endpoint) {
+      const response = await fetch(BASE_URL + endpoint);
+      const data = await response.json();
+      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+      document.getElementById("resultImage").style.display = "none";
+    }
+  </script>
+</body>
+</html>
